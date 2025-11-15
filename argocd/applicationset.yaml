@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: apps-smart
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/abeguin/argocd.git
+        revision: main
+        directories:
+          - path: apps/*
+            includeFiles:
+              - "**/Chart.yaml"
+              - "**/kustomization.yaml"
+              - "**/*.yaml"
+
+  template:
+    metadata:
+      name: "{{path.basename}}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/abeguin/argocd.git
+        targetRevision: main
+        path: "{{path}}"
+
+        helm:
+          {{- if file.Exists (print path "/Chart.yaml") }}
+          releaseName: "{{path.basename}}"
+          valueFiles:
+            - values.yaml
+          {{- end }}
+
+        kustomize:
+          {{- if file.Exists (print path "/kustomization.yaml") }}
+          buildOptions: "--load-restrictor LoadRestrictionsNone"
+          {{- end }}
+
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{path.basename}}"
+
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+      syncOptions:
+        - CreateNamespace=true
