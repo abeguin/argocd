@@ -1,7 +1,7 @@
-apiVersion: argoproj.io/v1beta1
+apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: apps-smart
+  name: apps-auto
   namespace: argocd
 spec:
   generators:
@@ -13,26 +13,25 @@ spec:
 
   template:
     metadata:
-      name: "{{{path.basename}}-{{index (splitList \"/\" path) 1}}-{{index (splitList \"/\" path) 2}}"
+      name: "{{index (splitList \"/\" path) 1}}-{{index (splitList \"/\" path) 2}}"
     spec:
       project: default
       source:
         repoURL: https://github.com/abeguin/argocd.git
         targetRevision: main
-        path: "{{path}}"
-
+        path: "{{index (splitList \"/\" path) 0}}/{{index (splitList \"/\" path) 1}}"
         helm:
-          releaseName: "{{path.basename}}-{{index (splitList \"/\" path) 1}}-{{index (splitList \"/\" path) 2}}"
+          releaseName: "{{index (splitList \"/\" path) 1}}-{{index (splitList \"/\" path) 2}}"
           valueFiles:
-            - values.yaml
+            - "{{index (splitList \"/\" path) 2}}/values.yaml"
 
       destination:
         server: https://kubernetes.default.svc
-        namespace: "{{path.basename}}-{{index (splitList \"/\" path) 1}}-{{index (splitList \"/\" path) 2}}"
+        namespace: "{{index (splitList \"/\" path) 1}}-{{index (splitList \"/\" path) 2}}"
 
       syncPolicy:
         automated:
           prune: true
           selfHeal: true
-      syncOptions:
-        - CreateNamespace=true
+        syncOptions:
+          - CreateNamespace=true
