@@ -2,7 +2,7 @@ paperless:
   enabled: true
   containerPort: 8000
   replicaCount: 1
-  repository: ghrc.io/paperless-ngx/paperless-ngx
+  repository: ghcr.io/paperless-ngx/paperless-ngx
   tag: latest
   consumeSync:
     enabled: true
