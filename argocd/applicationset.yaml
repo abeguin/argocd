@@ -4,30 +4,38 @@ metadata:
   name: apps-auto
   namespace: argocd
 spec:
+  goTemplate: true
+
   generators:
     - git:
         repoURL: https://github.com/abeguin/argocd.git
         revision: main
         directories:
+          # include env-like subdirs
           - path: apps/*/*
+          # ignore templates dirs
+          - path: apps/*/templates
+            exclude: true
 
   template:
     metadata:
-      name: "{{index (splitList \"/\" path) 1}}-{{index (splitList \"/\" path) 2}}"
+      # e.g. apps-paperless-abe for apps/paperless/abe
+      name: '{{ .path.path | replace "/" "-" }}'
     spec:
       project: default
       source:
         repoURL: https://github.com/abeguin/argocd.git
         targetRevision: main
-        path: "{{index (splitList \"/\" path) 0}}/{{index (splitList \"/\" path) 1}}"
+        # chart in apps/<app>
+        path: '{{ index (splitList "/" .path.path) 0 }}/{{ index (splitList "/" .path.path) 1 }}'
         helm:
-          releaseName: "{{index (splitList \"/\" path) 1}}-{{index (splitList \"/\" path) 2}}"
+          releaseName: '{{ .path.path | replace "/" "-" }}'
           valueFiles:
-            - "{{index (splitList \"/\" path) 2}}/values.yaml"
+            - '{{ index (splitList "/" .path.path) 2 }}/values.yaml'
 
       destination:
         server: https://kubernetes.default.svc
-        namespace: "{{index (splitList \"/\" path) 1}}-{{index (splitList \"/\" path) 2}}"
+        namespace: '{{ .path.path | replace "/" "-" }}'
 
       syncPolicy:
         automated:

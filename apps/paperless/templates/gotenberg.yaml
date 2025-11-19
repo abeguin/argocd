@@ -1,11 +1,9 @@
-{{- if .Values.gotenberg.enabled }}
+{{- if and .Values.gotenberg .Values.gotenberg.enabled }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: gotenberg
-  labels:
-    {{- include "paperless.labels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
@@ -18,13 +16,13 @@ spec:
     spec:
       containers:
         - name: gotenberg
-          image: {{ .Values.gotenberg.image }}
+          image: {{ .Values.gotenberg.image }}:{{ .Values.gotenberg.tag }}
           args:
             - "gotenberg"
             - "--chromium-disable-javascript=true"
             - "--chromium-allow-list=file:///tmp/.*"
           ports:
-            - containerPort: 3000
+            - containerPort: {{ .Values.gotenberg.containerPort }}
           resources:
             requests:
               cpu: "0.5"
@@ -37,12 +35,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: gotenberg
-  labels:
-    {{- include "paperless.labels" . | nindent 4 }}
 spec:
   selector:
     app: gotenberg
   ports:
-    - port: 3000
-      targetPort: 3000
+    - port: {{ .Values.gotenberg.servicePort }}
+      targetPort: {{ .Values.gotenberg.containerPort }}
 {{- end }}

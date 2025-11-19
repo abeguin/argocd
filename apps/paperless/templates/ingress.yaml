@@ -1,13 +1,10 @@
-{{- if .Values.ingress.enabled }}
+{{- if and .Values.ingress .Values.ingress.enabled .Values.paperless .Values.paperless.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: paperless
   annotations:
-    kubernetes.io/ingress.class: {{ .Values.ingress.className | quote }}
-    {{- with .Values.ingress.annotations }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
+    kubernetes.io/ingress.class: treafik
 spec:
   rules:
     - host: {{ .Values.ingress.host | quote }}
@@ -17,7 +14,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: paperless-web
+                name: {{ .Values.paperless.service.name }}
                 port:
-                  number: 8000
+                  number: {{ .Values.paperless.service.port }}
 {{- end }}

@@ -1,11 +1,9 @@
-{{- if .Values.tika.enabled }}
+{{- if and .Values.tika .Values.tika.enabled }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tika
-  labels:
-    {{- include "paperless.labels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
@@ -20,7 +18,7 @@ spec:
         - name: tika
           image: {{ .Values.tika.image }}
           ports:
-            - containerPort: 9998
+            - containerPort: {{ .Values.tika.containerPort }}
           resources:
             requests:
               cpu: "0.5"
@@ -33,12 +31,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: tika
-  labels:
-    {{- include "paperless.labels" . | nindent 4 }}
 spec:
   selector:
     app: tika
   ports:
-    - port: 9998
-      targetPort: 9998
+    - port: {{ .Values.tika.servicePort }}
+      targetPort: {{ .Values.tika.containerPort }}
 {{- end }}

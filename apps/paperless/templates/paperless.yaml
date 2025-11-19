@@ -1,0 +1,156 @@
+{{- if and .Values.paperless .Values.paperless.enabled .Values.configMap .Values.configMap.enabled}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperless
+spec:
+  replicas: {{ .Values.paperless.replicaCount }}
+  selector:
+    matchLabels:
+      app: paperless
+  template:
+    metadata:
+      labels:
+        app: paperless
+    spec:
+      containers:
+        - name: web
+          image: {{ .Values.paperless.repository }}:{{ .Values.paperless.tag }}
+          ports:
+            - containerPort: {{ .Values.paperless.containerPort }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.configMap.name }}
+          env:
+            - name: PAPERLESS_DBUSER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresql.auth.secretName }}
+                  key: {{ .Values.postgresql.auth.secretKeys.usernameKey }}
+            - name: PAPERLESS_DBPASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresql.auth.secretName }}
+                  key: {{ .Values.postgresql.auth.secretKeys.userPasswordKey }}
+            - name: PAPERLESS_DBNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresql.auth.secretName }}
+                  key: {{ .Values.postgresql.auth.secretKeys.databaseKey }}
+          volumeMounts:
+            - name: data
+              mountPath: /usr/src/paperless/data
+            - name: media
+              mountPath: /usr/src/paperless/media
+            - name: export
+              mountPath: /usr/src/paperless/export
+            - name: consume-tmp
+              mountPath: /usr/src/paperless/consume
+          resources:
+            requests:
+              cpu: "0.5"
+              memory: "2Gi"
+            limits:
+              cpu: "4"
+              memory: "4Gi"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.paperless.containerPort }}
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.paperless.containerPort }}
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 5
+
+        {{- if .Values.paperless.consumeSync.enabled }}
+        - name: consume-sync
+          image: alpine:3.20
+          resources:
+            requests:
+              cpu: "0.25"
+              memory: "128Mi"
+            limits:
+              cpu: "0.5"
+              memory: "256Mi"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              apk add --no-cache rsync inotify-tools
+              mkdir -p /mnt/consume /usr/src/paperless/consume
+              echo "📦 Starting consume folder sync (host -> tmpfs)..."
+              while true; do
+                rsync -a --delete /mnt/consume/ /usr/src/paperless/consume/
+                inotifywait -r -e modify,create,delete /mnt/consume || sleep 1
+              done
+          volumeMounts:
+            - name: consume-host
+              mountPath: /mnt/consume
+            - name: consume-tmp
+              mountPath: /usr/src/paperless/consume
+        {{- end }}
+
+      volumes:
+        - name: data
+          hostPath:
+            path: {{ .Values.paperless.volumes.data }}
+            type: Directory
+        - name: media
+          hostPath:
+            path: {{ .Values.paperless.volumes.media }}
+            type: Directory
+        - name: export
+          hostPath:
+            path: {{ .Values.paperless.volumes.export }}
+            type: Directory
+        - name: consume-host
+          hostPath:
+            path: {{ .Values.paperless.volumes.consume }}
+            type: Directory
+        - name: consume-tmp
+          emptyDir:
+            medium: "Memory"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.paperless.service.name }}
+spec:
+  selector:
+    app: paperless
+  ports:
+    - port: {{ .Values.paperless.service.port }}
+      targetPort: {{ .Values.paperless.containerPort }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.paperless.configMap.name }}
+data:
+  PAPERLESS_PUBLIC_URL: {{ .Values.endpoints.publicURL | quote }}
+  PAPERLESS_TIKA_ENDPOINT: {{ .Values.endpoints.tika | quote }}
+  PAPERLESS_TIKA_GOTENBERG_ENDPOINT: {{ .Values.endpoints.gotenberg | quote }}
+  PAPERLESS_DBHOST: {{ .Values.endpoints.dbHost | quote }}
+  PAPERLESS_REDIS: {{ .Values.endpoints.redisURL | quote }}
+  PAPERLESS_OCR_LANGUAGE: "fra"
+  PAPERLESS_OCR_LANGUAGES: "eng deu"
+  PAPERLESS_OCR_USER_ARGS: "{\"invalidate_digital_signatures\": true}"
+  PAPERLESS_CONSUMER_RECURSIVE: "true"
+  PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS: "true"
+  PAPERLESS_TIKA_ENABLED: "true"
+  PAPERLESS_TASK_WORKERS: "4"
+  PAPERLESS_THREADS_PER_WORKER: "2"
+  PAPERLESS_FILENAME_FORMAT: "\{\{ correspondent \}\}/\{\{ created_year \}\}/\{\{ created_year \}\}-\{\{ created_month \}\}-\{\{ created_day \}\}-\{\{ title \}\}"
+  PAPERLESS_FORCE_HTTPS: "false"
+  USERMAP_UID: "501"
+  USERMAP_GID: "20"
+
+{{- end }}

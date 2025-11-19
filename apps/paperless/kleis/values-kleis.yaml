@@ -1,0 +1,16 @@
+ingress:
+  host: kleis.paperless
+
+endpoints:
+  publicURL: "http://kleis.paperless"
+  tika: "http://tika.paperless-kleis.svc.cluster.local:9998"
+  gotenberg: "http://gotenberg.paperless-kleis.svc.cluster.local:3000"
+  dbHost: "db-postgresql.paperless-kleis.svc.cluster.local"
+  redisURL: "redis://redis-master.paperless-kleis.svc.cluster.local:6379"
+
+paperless:
+  volumes:
+    data: /Users/afo/paperless/kleis/data
+    media: /Users/afo/paperless/kleis/media
+    export: /Users/afo/paperless/kleis/export
+    consume: /Users/afo/paperless/kleis/consume

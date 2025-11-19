@@ -21,18 +21,18 @@ spec:
                 - name: PGUSER
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.database.secretName }}
-                      key: username
+                      name: {{ .Values.postgresql.auth.secretName }}
+                      key: {{ .Values.postgresql.auth.secretKeys.usernameKey }}
                 - name: PGPASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.database.secretName }}
-                      key: password
+                      name: {{ .Values.postgresql.auth.secretName }}
+                      key: {{ .Values.postgresql.auth.secretKeys.userPasswordKey }}
                 - name: PGDATABASE
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.database.secretName }}
-                      key: database
+                      name: {{ .Values.postgresql.auth.secretName }}
+                      key: {{ .Values.postgresql.auth.secretKeys.databaseKey }}
               volumeMounts:
                 - name: data
                   mountPath: /data
@@ -82,16 +82,16 @@ spec:
           volumes:
             - name: data
               hostPath:
-                path: {{ .Values.volumes.data }}
+                path: /data
             - name: media
               hostPath:
-                path: {{ .Values.volumes.media }}
+                path: /media
             - name: export
               hostPath:
-                path: {{ .Values.volumes.export }}
+                path: /export
             - name: consume
               hostPath:
-                path: {{ .Values.volumes.consume }}
+                path: /consume
             - name: backup
               hostPath:
                 path: /backups

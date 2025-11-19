@@ -8,8 +8,9 @@ endpoints:
   dbHost: "db-postgresql.paperless-abe.svc.cluster.local"
   redisURL: "redis://redis-master.paperless-abe.svc.cluster.local:6379"
 
-volumes:
-  data: /Users/afo/paperless/abe/data
-  media: /Users/afo/paperless/abe/media
-  export: /Users/afo/paperless/abe/export
-  consume: /Users/afo/paperless/abe/consume
+paperless:
+  volumes:
+    data: /Users/afo/paperless/abe/data
+    media: /Users/afo/paperless/abe/media
+    export: /Users/afo/paperless/abe/export
+    consume: /Users/afo/paperless/abe/consume
