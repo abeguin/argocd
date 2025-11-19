@@ -11,16 +11,13 @@ spec:
         repoURL: https://github.com/abeguin/argocd.git
         revision: main
         directories:
-          # include env-like subdirs
           - path: apps/*/*
-          # ignore templates dirs
           - path: apps/*/templates
             exclude: true
 
   template:
-    metadata:
-      # e.g. apps-paperless-abe for apps/paperless/abe
-      name: '{{ .path.path | replace "/" "-" }}'
+    metadata: # e.g. paperless-abe for apps/paperless/abe
+      name: '{{ index (splitList "/" .path.path) 1 }}-{{ index (splitList "/" .path.path) 2}}'
     spec:
       project: default
       source:
@@ -35,7 +32,7 @@ spec:
 
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{ .path.path | replace "/" "-" }}'
+        namespace: '{{ index (splitList "/" .path.path) 1 }}-{{ index (splitList "/" .path.path) 2}}'
 
       syncPolicy:
         automated:
