@@ -21,7 +21,7 @@ spec:
             - containerPort: {{ .Values.paperless.containerPort }}
           envFrom:
             - configMapRef:
-                name: {{ .Values.configMap.name }}
+                name: {{ .Values.paperless.configMap.name }}
           env:
             - name: PAPERLESS_DBUSER
               valueFrom:
