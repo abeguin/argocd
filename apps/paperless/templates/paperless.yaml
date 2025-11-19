@@ -148,7 +148,7 @@ data:
   PAPERLESS_TIKA_ENABLED: "true"
   PAPERLESS_TASK_WORKERS: "4"
   PAPERLESS_THREADS_PER_WORKER: "2"
-  PAPERLESS_FILENAME_FORMAT: "\{\{ correspondent \}\}/\{\{ created_year \}\}/\{\{ created_year \}\}-\{\{ created_month \}\}-\{\{ created_day \}\}-\{\{ title \}\}"
+  PAPERLESS_FILENAME_FORMAT: '{{ "{{ correspondent }} "}}/{{ "{{ created_year }}" }}/{{ "{{ created_year }}" }}-{{ "{{ created_month }}" }}-{{ "{{ created_day }}" }}-{{ "{{ title }}" }}'
   PAPERLESS_FORCE_HTTPS: "false"
   USERMAP_UID: "501"
   USERMAP_GID: "20"
