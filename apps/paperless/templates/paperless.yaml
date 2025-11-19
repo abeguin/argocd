@@ -1,4 +1,4 @@
-{{- if and .Values.paperless .Values.paperless.enabled .Values.configMap .Values.configMap.enabled}}
+{{- if and .Values.paperless .Values.paperless.enabled }}
 
 apiVersion: apps/v1
 kind: Deployment
