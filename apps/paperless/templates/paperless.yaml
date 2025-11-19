@@ -26,17 +26,17 @@ spec:
             - name: PAPERLESS_DBUSER
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.postgresql.auth.secretName }}
+                  name: {{ .Values.postgresql.auth.existingSecret }}
                   key: {{ .Values.postgresql.auth.secretKeys.usernameKey }}
             - name: PAPERLESS_DBPASS
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.postgresql.auth.secretName }}
+                  name: {{ .Values.postgresql.auth.existingSecret }}
                   key: {{ .Values.postgresql.auth.secretKeys.userPasswordKey }}
             - name: PAPERLESS_DBNAME
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.postgresql.auth.secretName }}
+                  name: {{ .Values.postgresql.auth.existingSecret }}
                   key: {{ .Values.postgresql.auth.secretKeys.databaseKey }}
           volumeMounts:
             - name: data

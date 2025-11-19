@@ -21,6 +21,7 @@
               #helm # helm is not available for aarch64-darwin, please install it with another package manager
               k9s
               argocd
+              kubeseal
             ];
         in {
           devShells.default = pkgs.mkShell {

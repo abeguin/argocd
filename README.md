@@ -32,3 +32,19 @@ kubectl apply -n argocd -f argocd/applicationset.yaml
 ```shell
 kubectl apply -n argocd -f argocd/bitnami-repository.yaml
 ```
+
+## Sealed secrets
+
+```shell
+kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.33.1/controller.y
+aml
+```
+
+```shell
+kubeseal --controller-namespace kube-system \
+--controller-name sealed-secrets-controller \
+--format yaml \
+--namespace paperless-abe \
+< $GIT_ROOT/local/postgresql-secret.yaml \
+> $GIT_ROOT/apps/paperless/abe/paperless-db-secret-sealed.yaml
+```

@@ -21,17 +21,17 @@ spec:
                 - name: PGUSER
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.postgresql.auth.secretName }}
+                      name: {{ .Values.postgresql.auth.existingSecret }}
                       key: {{ .Values.postgresql.auth.secretKeys.usernameKey }}
                 - name: PGPASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.postgresql.auth.secretName }}
+                      name: {{ .Values.postgresql.auth.existingSecret }}
                       key: {{ .Values.postgresql.auth.secretKeys.userPasswordKey }}
                 - name: PGDATABASE
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.postgresql.auth.secretName }}
+                      name: {{ .Values.postgresql.auth.existingSecret }}
                       key: {{ .Values.postgresql.auth.secretKeys.databaseKey }}
               volumeMounts:
                 - name: data

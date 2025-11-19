@@ -16,7 +16,7 @@ postgresql:
   enabled: true
   fullnameOverride: postgresql
   auth:
-    secretName: paperless-db-secret
+    existingSecret: paperless-db-secret
     secretKeys:
       userPasswordKey: password
       postgresPasswordKey: postgres-password
