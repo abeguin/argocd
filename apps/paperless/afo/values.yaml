@@ -1,0 +1,16 @@
+ingress:
+  host: afo.paperless
+
+endpoints:
+  publicURL: "http://afo.paperless"
+  tika: "http://tika.paperless-afo.svc.cluster.local:9998"
+  gotenberg: "http://gotenberg.paperless-afo.svc.cluster.local:3000"
+  dbHost: "postgresql.paperless-afo.svc.cluster.local"
+  redisURL: "redis://redis-master.paperless-afo.svc.cluster.local:6379"
+
+paperless:
+  volumes:
+    data: /Users/afo/paperless/afo/data
+    media: /Users/afo/paperless/afo/media
+    export: /Users/afo/paperless/afo/export
+    consume: /Users/afo/paperless/afo/consume
