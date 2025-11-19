@@ -1,0 +1,44 @@
+{{- if .Values.tika.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tika
+  labels:
+    {{- include "paperless.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tika
+  template:
+    metadata:
+      labels:
+        app: tika
+    spec:
+      containers:
+        - name: tika
+          image: {{ .Values.tika.image }}
+          ports:
+            - containerPort: 9998
+          resources:
+            requests:
+              cpu: "0.5"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tika
+  labels:
+    {{- include "paperless.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: tika
+  ports:
+    - port: 9998
+      targetPort: 9998
+{{- end }}

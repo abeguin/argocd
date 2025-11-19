@@ -1,0 +1,198 @@
+{{- if .Values.cron.backup.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: paperless-backup
+spec:
+  schedule: {{ .Values.cron.backup.schedule | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: backup
+              image: postgres:18
+              env:
+                - name: PGHOST
+                  value: {{ .Values.endpoints.dbHost | quote }}
+                - name: PGUSER
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.database.secretName }}
+                      key: username
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.database.secretName }}
+                      key: password
+                - name: PGDATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.database.secretName }}
+                      key: database
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - name: media
+                  mountPath: /media
+                - name: export
+                  mountPath: /export
+                - name: consume
+                  mountPath: /consume
+                - name: backup
+                  mountPath: /backups
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  apt-get update && apt-get install -y tar gzip coreutils
+
+                  TS=$(date +'%Y-%m-%d_%H-%M-%S')
+                  BACKUP_DIR="/tmp/backup-$TS"
+                  BACKUP_FILE="/backups/paperless-backup-$TS.tar.gz"
+
+                  mkdir -p "$BACKUP_DIR"
+                  echo "🗄️ Starting backup at $TS"
+
+                  # PostgreSQL dump
+                  pg_dump -Fc -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" > "$BACKUP_DIR/paperless-db.dump"
+
+                  # Copy application volumes
+                  mkdir -p "$BACKUP_DIR/files"
+                  cp -r /data /media /export /consume "$BACKUP_DIR/files/"
+
+                  # Compute checksums for reference
+                  cd "$BACKUP_DIR"
+                  find files -type f -exec sha256sum {} \; | sort -k2 > "$BACKUP_DIR/previous-checksums.txt"
+
+                  # Create archive
+                  tar -czf "$BACKUP_FILE" -C /tmp "backup-$TS"
+
+                  # Clean temporary folder
+                  rm -rf "$BACKUP_DIR"
+
+                  # Cleanup old backups (keep last 3)
+                  ls -1t /backups/paperless-backup-*.tar.gz | tail -n +4 | xargs -r rm -f
+
+                  echo "✅ Backup completed successfully: $BACKUP_FILE"
+          volumes:
+            - name: data
+              hostPath:
+                path: {{ .Values.volumes.data }}
+            - name: media
+              hostPath:
+                path: {{ .Values.volumes.media }}
+            - name: export
+              hostPath:
+                path: {{ .Values.volumes.export }}
+            - name: consume
+              hostPath:
+                path: {{ .Values.volumes.consume }}
+            - name: backup
+              hostPath:
+                path: /backups
+{{- end }}
+---
+{{- if .Values.cron.restoreTest.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: paperless-restore-test
+spec:
+  schedule: {{ .Values.cron.restoreTest.schedule | quote }}
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999
+          containers:
+            - name: restore-test
+              image: postgres:18
+              volumeMounts:
+                - name: backup
+                  mountPath: /backups
+                - name: restore
+                  mountPath: /restore-test
+                - name: verify
+                  mountPath: /verify
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+
+                  TS=$(date +'%Y-%m-%d_%H-%M-%S')
+                  BACKUP_FILE=$(ls -1t /backups/paperless-backup-*.tar.gz | head -1)
+
+                  echo "🛠️ Starting restore test at $TS"
+                  mkdir -p /restore-test
+                  
+                  # Extract latest backup
+                  tar -xzf "$BACKUP_FILE" -C /restore-test --strip-components=1
+                  
+                  # Initialize temporary DB cluster
+                  TEMP_DB=/restore-test/tmp_pgdata
+                  mkdir -p $TEMP_DB
+                  echo "📦 Initializing temporary Postgres database..."
+                  initdb -D $TEMP_DB 
+                  
+                  # Start temporary DB
+                  pg_ctl -D $TEMP_DB -o "-p 55432 -h 127.0.0.1" -w start
+
+                  # Create test DB
+                  createdb -p 55432 testdb
+                  
+                  # Create paperless role
+                  psql -p 55432 -d postgres -c "CREATE ROLE paperless LOGIN;"
+
+                  # Restore dump
+                  pg_restore -p 55432 -d testdb /restore-test/paperless-db.dump
+                  
+                  echo "✅ DB restore to temporary DB OK."
+                  
+                  # Verify application volumes
+                  for d in data media export consume; do
+                    [ -d "/restore-test/files/$d" ] && echo "📁 Found $d" || { echo "❌ Missing $d"; }
+                  done
+  
+                  # Compute checksums
+                  mkdir -p /verify
+                  cd /restore-test
+                  find files -type f -exec sha256sum {} \; | sort -k2 > /verify/latest-checksums.txt
+  
+                  if [ -f /restore-test/previous-checksums.txt ]; then
+                    # Compare checksums
+                    diff -u /restore-test/previous-checksums.txt /verify/latest-checksums.txt > /verify/diff.txt || true
+                    if [ -s /verify/diff.txt ]; then
+                      echo "⚠️ Differences detected:"
+                      cat /verify/diff.txt
+                    else
+                      echo "✅ No differences"
+                    fi
+                  fi
+                  
+                  # Stop temporary DB
+                  pg_ctl -D $TEMP_DB -w stop
+
+                  # Clean up
+                  echo "🎉 Restore test completed successfully."
+
+          volumes:
+            - name: backup
+              hostPath:
+                path: /backups
+            - name: restore
+              emptyDir: { }
+            - name: verify
+              emptyDir: { }
+{{- end }}

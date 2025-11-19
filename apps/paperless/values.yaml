@@ -1,0 +1,42 @@
+  auth:
+    existingSecret: paperless-db-secret
+    secretKeys:
+      userPasswordKey: password
+      postgresPasswordKey: postgres-password
+      usernameKey: username
+      databaseKey: database
+    username: paperless
+    database: paperless
+  primary:
+    persistence:
+      enabled: true
+      size: 1Gi
+  networkPolicy:
+    enabled: false
+  image:
+    tag: sha256-2b08aaced99e1aff63ec8fff5a07bd0eb2e70cde4769df218d16fa4a542bbd45
+
+redis:
+  enabled: true
+  fullnameOverride: redis
+  auth:
+    enabled: false
+  image:
+    tag: sha256-b9905a48b6726c0d59df323c83db4c6253a00851ab3604d0edcc32e925e3659f
+
+gotenberg:
+  enabled: true
+  image: gotenberg/gotenberg:8.22
+
+tika:
+  enabled: true
+  image: apache/tika:latest
+
+cron:
+  backup:
+    enabled: true
+    schedule: "0 13 * * *"
+  restoreTest:
+    enabled: true
+    schedule: "30 13 * * *"
+
