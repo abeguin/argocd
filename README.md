@@ -21,8 +21,28 @@ helm upgrade --install argocd argo/argo-cd \
   -f values.yaml
 ```
 
+### Port forward
+
 ```shell
-kubectl port-forward svc/argocd-server -n argocd 8080:443
+kubectl port-forward service/argocd-server -n argocd 8080:443
+```
+
+### Retrieve initial password
+
+```shell
+argocd admin initial-password -n argocd
+```
+
+### Login
+
+```shell
+argocd login localhost:8080
+```
+
+### Update password
+
+```shell
+argocd account update-password --account admin
 ```
 
 ```shell
@@ -48,3 +68,24 @@ kubeseal --controller-namespace kube-system \
 < $GIT_ROOT/local/postgresql-secret.yaml \
 > $GIT_ROOT/apps/paperless/abe/paperless-db-secret-sealed.yaml
 ```
+
+## K8s external secrets
+
+### Links 
+
+- https://operatorhub.io/operator/external-secrets-operator
+- https://external-secrets.io/latest/introduction/getting-started/
+- https://github.com/external-secrets/external-secrets?tab=readme-ov-file
+
+### Getting started 
+
+```shell
+helm repo add external-secrets https://charts.external-secrets.io
+
+helm install external-secrets \
+   external-secrets/external-secrets \
+    -n external-secrets \
+    --create-namespace \
+  # --set installCRDs=false
+```
+
