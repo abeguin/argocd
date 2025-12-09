@@ -89,3 +89,15 @@ helm install external-secrets \
   # --set installCRDs=false
 ```
 
+```shell
+helm repo add jetstack https://charts.jetstack.io --force-update
+```
+
+```shell
+helm install \
+  cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
+  --create-namespace \
+  --version v1.19.1 \
+  --set crds.enabled=true
+```

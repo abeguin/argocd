@@ -26,6 +26,9 @@ spec:
 
     # helm specific config
     helm:
+      releaseName: argocd
+      valueFiles:
+        - values.yaml
       passCredentials: false
 
       # Ignore locally missing valueFiles when installing Helm chart. Defaults to false
