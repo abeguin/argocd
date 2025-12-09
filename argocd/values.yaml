@@ -1,4 +1,5 @@
 # Application Controller - Handle sync operations efficiently
+
 controller:
   replicas: 2
   resources:
@@ -40,6 +41,9 @@ redis:
     limits:
       cpu: 500m
       memory: 512Mi
+
+redisSecretInit:
+  enabled: false
 
 # Repo Server - Manifest generation
 repoServer:
