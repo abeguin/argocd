@@ -8,12 +8,17 @@ helm repo update
 ```
 
 ```shell
-kubectl create namespace argocd
+helm install argocd argo/argo-cd -n argocd --create-namespace --wait
 ```
 
+or 
+
 ```shell
-helm install argocd argo/argo-cd -n argocd
+cd $GIT_ROOT/argocd
+helm dependency build
+helm install argocd . -n argocd -f values.yaml --create-namespace --wait
 ```
+
 
 ```shell
 helm upgrade --install argocd argo/argo-cd \
